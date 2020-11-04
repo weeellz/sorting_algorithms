@@ -40,7 +40,26 @@ template <typename Iter, typename ResultIter>
 void radix_argsort(Iter begin, Iter end,
                    ResultIter result) requires std::random_access_iterator<Iter>
     &&std::unsigned_integral<std::iter_value_t<Iter>>
-        &&detail::index_iter<ResultIter> {}
+        &&detail::index_iter<ResultIter> {
+  auto iter_end = end;
+  auto i = 0;
+  for (auto iter_begin = begin; iter_begin != iter_end; ++iter_begin) {
+    if (iter_begin == iter_end) {
+      auto iter_mid = iter_begin;
+      radix_argsort(begin, iter_mid, result);
+      radix_argsort(iter_mid, end, result);
+    }
+    auto bytes_count = sizeof(std::iter_value_t<Iter>);
+    auto bits_count = bytes_count * 8;
+    auto ith_greatest_bit_first = (*iter_begin >> ((bits_count - 1) - i)) & 1;
+    auto ith_greatest_bit_second = (*iter_end >> ((bits_count - 1) - i)) & 1;
+    if (ith_greatest_bit_first > ith_greatest_bit_second) {
+      std::swap(*iter_begin, *iter_end);
+    }
+    --iter_end;
+    ++i;
+  }
+}
 
 template <typename Iter, typename ResultIter>
 void bucket_argsort(
