@@ -5,4 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-add_library(algo_c src/c_api.cpp)
+add_library(algo_c SHARED src/c_api.cpp)
+install(TARGETS algo_c DESTINATION lib)
+install(FILES include/algo/c_api.h DESTINATION include)
