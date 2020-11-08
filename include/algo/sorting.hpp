@@ -1,8 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <cstdlib>
-#include <iostream>
 #include <iterator>
 #include <math.h>
 #include <numeric>
@@ -49,11 +47,11 @@ void radix_argsort_impl(Iter begin, Iter end, ResultIter result, int i) {
   auto iter_begin = begin;
   auto iter_end = begin + size - 1;
   while (iter_begin != iter_end) {
-    auto ith_greatest_bit_first = ((*iter_begin) >> ((bits_count - 1) - i)) & 1;
-    auto ith_greatest_bit_second = ((*iter_end) >> ((bits_count - 1) - i)) & 1;
-    if (ith_greatest_bit_first == 0) {
+    auto ith_greatest_bit_begin = ((*iter_begin) >> ((bits_count - 1) - i)) & 1;
+    auto ith_greatest_bit_end = ((*iter_end) >> ((bits_count - 1) - i)) & 1;
+    if (ith_greatest_bit_begin == 0) {
       ++iter_begin;
-    } else if (ith_greatest_bit_second == 1) {
+    } else if (ith_greatest_bit_end == 1) {
       --iter_end;
     } else {
       std::iter_swap(iter_begin, iter_end);
@@ -62,8 +60,8 @@ void radix_argsort_impl(Iter begin, Iter end, ResultIter result, int i) {
       std::iter_swap(result + i, result + j);
     }
   }
-  auto ith_greatest_bit_first = ((*iter_begin) >> ((bits_count - 1) - i)) & 1;
-  if (ith_greatest_bit_first == 0) {
+  auto ith_greatest_bit_begin = ((*iter_begin) >> ((bits_count - 1) - i)) & 1;
+  if (ith_greatest_bit_begin == 0) {
     ++iter_begin;
   }
   radix_argsort_impl(begin, iter_begin, result, i + 1);
