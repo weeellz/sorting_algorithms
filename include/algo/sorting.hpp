@@ -37,6 +37,45 @@ void insertion_sort(Iter begin, Iter end, Comp comp) {
   }
 }
 
+template <typename Iter, typename ResultIter, typename Comp>
+void insertion_argsort_impl(Iter begin, Iter end, ResultIter result,
+                            Comp comp) {
+  for (auto iter = begin; iter != end; ++iter) {
+    for (auto cur_element = iter; cur_element != begin; --cur_element) {
+      if (comp(*cur_element, *(cur_element - 1))) {
+        std::iter_swap(cur_element, cur_element - 1);
+        auto i = std::distance(begin, cur_element);
+        auto j = std::distance(begin, cur_element - 1);
+        std::iter_swap(result + i, result + j);
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+template <typename Iter, typename ResultIter>
+void counting_argsort_impl(Iter begin, Iter end, ResultIter result,
+                           std::iter_value_t<Iter> max) {
+  auto size = std::distance(begin, end);
+
+  std::vector<int> counts_array(max + 1, 0);
+  for (auto iter = begin; iter != end; ++iter) {
+    ++counts_array[*iter];
+  }
+
+  for (int i = 1; i < max + 1; ++i) {
+    counts_array[i] += counts_array[i - 1];
+  }
+
+  for (int i = size - 1; i >= 0; --i) {
+    auto original_number = *(begin + i);
+    auto pos = counts_array[original_number] - 1;
+    result[pos] = i;
+    --counts_array[original_number];
+  }
+}
+
 template <typename Iter, typename ResultIter>
 void radix_argsort_impl(Iter begin, Iter end, ResultIter result, int i) {
   auto size = std::distance(begin, end);
@@ -75,35 +114,103 @@ Iter partition(Iter begin, Iter end, ResultIter result, int random) {
   auto iter_begin = begin;
   auto iter_end = begin + size - 1;
   auto pivot = *(begin + random);
-  while (iter_begin != iter_end) {
-    if (*iter_begin < pivot) {
+
+  while (true) {
+    while (*iter_begin < pivot) {
       ++iter_begin;
-    } else if (*iter_end >= pivot) {
-      --iter_end;
-    } else {
-      std::iter_swap(iter_begin, iter_end);
-      auto i = std::distance(begin, iter_begin);
-      auto j = std::distance(begin, iter_end);
-      std::iter_swap(result + i, result + j);
     }
+    while (*iter_end > pivot) {
+      --iter_end;
+    }
+    auto i = std::distance(begin, iter_begin);
+    auto j = std::distance(begin, iter_end);
+    if (i >= j) {
+      return iter_end + 1;
+    }
+    std::iter_swap(iter_begin, iter_end);
+    std::iter_swap(result + i, result + j);
+    ++iter_begin;
+    --iter_end;
   }
-  return iter_begin + 1;
 }
 
 template <typename Iter, typename ResultIter>
+Iter lomuto_partition(Iter begin, Iter end, ResultIter result, int random) {
+  auto pivot = *(begin + random);
+  std::iter_swap(begin + random, end - 1);
+  auto last_less_num = begin;
+  auto last_great_num = begin;
+  for (auto iter = begin; iter != end - 1; ++iter) {
+    if (*iter > pivot) {
+      ++last_great_num;
+    } else if (*iter == pivot) {
+      if (std::distance(begin, last_less_num) <
+          std::distance(last_less_num, last_great_num)) {
+        std::iter_swap(last_less_num, iter);
+        ++last_less_num;
+      } else {
+        std::iter_swap(last_great_num, iter);
+        ++last_great_num;
+      }
+    } else {
+      std::iter_swap(last_less_num, iter);
+      ++last_less_num;
+      ++last_great_num;
+    }
+  }
+  std::iter_swap(end - 1, last_less_num);
+  return last_less_num;
+}
+
+template <typename Iter, typename ResultIter, int Limit = 100>
 void quick_argsort_impl(Iter begin, Iter end, ResultIter result,
                         std::mt19937 &generator) {
+  for (auto size = std::distance(begin, end); size >= Limit;
+       size = std::distance(begin, end)) {
+    std::uniform_int_distribution<int> distribution(0, size);
+    auto random = distribution(generator);
+    auto p = detail::partition(begin, end, result, random);
+    if (std::distance(begin, p) <= std::distance(p, end)) {
+      quick_argsort_impl(begin, p, result, generator);
+      result += std::distance(begin, p);
+      begin = p;
+    } else {
+      quick_argsort_impl(p, end, result + std::distance(begin, p), generator);
+      end = p;
+    }
+  }
+  detail::insertion_argsort_impl(begin, end, result, std::less());
+}
+} // namespace detail
+
+template <typename Iter, typename ResultIter, typename Comp>
+void insertion_argsort(Iter begin, Iter end, ResultIter result,
+                       Comp comp) requires std::random_access_iterator<Iter>
+    &&std::unsigned_integral<std::iter_value_t<Iter>>
+        &&detail::index_iter<ResultIter> {
   auto size = std::distance(begin, end);
   if (size < 2) {
     return;
   }
-  std::uniform_int_distribution<int> distribution(0, size);
-  auto random = distribution(generator);
-  auto p = detail::partition(begin, end, result, random);
-  quick_argsort_impl(begin, p, result, generator);
-  quick_argsort_impl(p, end, result + std::distance(begin, p), generator);
+  std::vector tmp(begin, end);
+  std::iota(result, result + std::distance(begin, end), 0);
+  detail::insertion_argsort_impl(tmp.begin(), tmp.end(), result, comp);
 }
-} // namespace detail
+
+template <typename Iter, typename ResultIter>
+void counting_argsort(
+    Iter begin, Iter end,
+    ResultIter result) requires std::random_access_iterator<Iter>
+    &&std::unsigned_integral<std::iter_value_t<Iter>>
+        &&detail::index_iter<ResultIter> {
+  auto size = std::distance(begin, end);
+  if (size < 2) {
+    return;
+  }
+  std::vector tmp(begin, end);
+  auto max = *(std::max_element(tmp.begin(), tmp.end()));
+  detail::counting_argsort_impl(tmp.begin(), tmp.end(), result, max);
+}
 
 template <typename Iter, typename ResultIter>
 void radix_argsort(Iter begin, Iter end,
@@ -121,14 +228,19 @@ void bucket_argsort(
     ResultIter result) requires std::random_access_iterator<Iter>
     &&detail::partially_ordered<std::iter_value_t<Iter>>
         &&detail::index_iter<ResultIter> {
+  auto size = std::distance(begin, end);
+  if (size < 2) {
+    return;
+  }
   auto num_buckets = (size_t)std::sqrt(std::distance(begin, end));
   auto max = *(std::max_element(begin, end));
   auto bucket_range = (uint64_t)ceil(((double)max) / num_buckets);
   using ValueType = std::iter_value_t<Iter>;
   using IndexType = std::iter_value_t<ResultIter>;
   using VIPair = std::pair<ValueType, IndexType>;
-  std::vector<std::vector<VIPair>> buckets(num_buckets, std::vector<VIPair>());
-  for (auto iter = begin; iter != end; iter++) {
+  std::vector<std::vector<VIPair>> buckets(num_buckets + 1,
+                                           std::vector<VIPair>());
+  for (auto iter = begin; iter != end; ++iter) {
     auto index = (int)floor((*iter / bucket_range));
     buckets[index].emplace_back(*iter, std::distance(begin, iter));
   }
@@ -143,7 +255,7 @@ void bucket_argsort(
   }
 }
 
-template <typename Iter, typename ResultIter>
+template <typename Iter, typename ResultIter, int Limit>
 void quick_argsort(Iter begin, Iter end,
                    ResultIter result) requires std::random_access_iterator<Iter>
     &&detail::partially_ordered<std::iter_value_t<Iter>>
@@ -152,6 +264,7 @@ void quick_argsort(Iter begin, Iter end,
 
   std::vector tmp(begin, end);
   std::iota(result, result + std::distance(begin, end), 0);
-  detail::quick_argsort_impl(tmp.begin(), tmp.end(), result, generator);
+  detail::quick_argsort_impl<Iter, ResultIter, Limit>(tmp.begin(), tmp.end(),
+                                                      result, generator);
 }
 } // namespace algo
