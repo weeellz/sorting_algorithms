@@ -61,39 +61,39 @@ TYPED_TEST_SUITE(SortTest, unsigned_types);
 
 TYPED_TEST(SortTest, insertion_sort_test) {
   for (auto &v : this->data) {
-    auto expected = this->get_sorted_indices(v);
+    auto expected = this->get_sorted_array(v);
     std::vector<size_t> actual(v.size());
     algo::insertion_argsort(v.begin(), v.end(), actual.begin(), std::less());
 
-    print(v, expected, "Expected array: ");
+    print(expected, "Expected array: ");
     print(v, actual, "Sorted array: ");
-    print(expected, "Expected indices: ");
-    print(actual, "Sorted indices: ");
+    // print(expected, "Expected indices: ");
+    // print(actual, "Sorted indices: ");
 
     std::cout << std::endl;
     for (int i = 0; i < v.size(); ++i) {
-      EXPECT_EQ(expected[i], actual[i]) << "Different values at " << i;
+      EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
     }
   }
 }
 
-// TYPED_TEST(SortTest, counting_sort_test) {
-//   for (auto &v : this->data) {
-//     auto expected = this->get_sorted_indices(v);
-//     std::vector<size_t> actual(v.size());
-//     algo::counting_argsort(v.begin(), v.end(), actual.begin());
+TYPED_TEST(SortTest, counting_sort_test) {
+  for (auto &v : this->data) {
+    auto expected = this->get_sorted_array(v);
+    std::vector<size_t> actual(v.size());
+    algo::counting_argsort(v.begin(), v.end(), actual.begin());
 
-//     print(v, expected, "Expected array: ");
-//     print(v, actual, "Sorted array: ");
-//     print(expected, "Expected indices: ");
-//     print(actual, "Sorted indices: ");
+    print(expected, "Expected array: ");
+    print(v, actual, "Sorted array: ");
+    // print(expected, "Expected indices: ");
+    // print(actual, "Sorted indices: ");
 
-//     std::cout << std::endl;
-//     for (int i = 0; i < v.size(); ++i) {
-//       EXPECT_EQ(expected[i], actual[i]) << "Different values at " << i;
-//     }
-//   }
-// }
+    std::cout << std::endl;
+    for (int i = 0; i < v.size(); ++i) {
+      EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
+    }
+  }
+}
 
 TYPED_TEST(SortTest, quick_sort_test) {
   for (auto &v : this->data) {
@@ -112,38 +112,38 @@ TYPED_TEST(SortTest, quick_sort_test) {
   }
 }
 
-// TYPED_TEST(SortTest, radix_sort_test) {
-//   for (auto &v : this->data) {
-//     auto expected = this->get_sorted_indices(v);
-//     std::vector<size_t> actual(v.size());
-//     algo::radix_argsort(v.begin(), v.end(), actual.begin());
+TYPED_TEST(SortTest, radix_sort_test) {
+  for (auto &v : this->data) {
+    auto expected = this->get_sorted_array(v);
+    std::vector<size_t> actual(v.size());
+    algo::radix_argsort(v.begin(), v.end(), actual.begin());
 
-//     print(v, expected, "Expected array: ");
-//     print(v, actual, "Sorted array: ");
-//     print(expected, "Expected indices: ");
-//     print(actual, "Sorted indices: ");
+    print(expected, "Expected array: ");
+    print(v, actual, "Sorted array: ");
+    // print(expected, "Expected indices: ");
+    // print(actual, "Sorted indices: ");
 
-//     std::cout << std::endl;
-//     for (int i = 0; i < v.size(); ++i) {
-//       EXPECT_EQ(expected[i], actual[i]) << "Different values at " << i;
-//     }
-//   }
-// }
+    std::cout << std::endl;
+    for (int i = 0; i < v.size(); ++i) {
+      EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
+    }
+  }
+}
 
-// TYPED_TEST(SortTest, bucket_sort_test) {
-//   for (auto &v : this->data) {
-//     auto expected = this->get_sorted_indices(v);
-//     std::vector<size_t> actual(v.size());
-//     algo::bucket_argsort(v.begin(), v.end(), actual.begin());
+TYPED_TEST(SortTest, bucket_sort_test) {
+  for (auto &v : this->data) {
+    auto expected = this->get_sorted_array(v);
+    std::vector<size_t> actual(v.size());
+    algo::bucket_argsort(v.begin(), v.end(), actual.begin());
 
-//     print(v, expected, "Expected array: ");
-//     print(v, actual, "Sorted array: ");
-//     print(expected, "Expected indices: ");
-//     print(actual, "Sorted indices: ");
+    print(expected, "Expected array: ");
+    print(v, actual, "Sorted array: ");
+    // print(expected, "Expected indices: ");
+    // print(actual, "Sorted indices: ");
 
-//     std::cout << std::endl;
-//     for (int i = 0; i < v.size(); ++i) {
-//       EXPECT_EQ(expected[i], actual[i]) << "Different values at " << i;
-//     }
-//   }
-// }
+    std::cout << std::endl;
+    for (int i = 0; i < v.size(); ++i) {
+      EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
+    }
+  }
+}

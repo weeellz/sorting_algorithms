@@ -216,8 +216,12 @@ void bucket_argsort(
   std::vector<std::vector<VIPair>> buckets(num_buckets + 1,
                                            std::vector<VIPair>());
   for (auto iter = begin; iter != end; ++iter) {
-    auto index = (int)floor((*iter / bucket_range));
-    buckets[index].emplace_back(*iter, std::distance(begin, iter));
+    if (*iter == 0) {
+      buckets[0].emplace_back(*iter, std::distance(begin, iter));
+    } else {
+      auto index = (int)floor((*iter / bucket_range));
+      buckets[index].emplace_back(*iter, std::distance(begin, iter));
+    }
   }
   for (auto &bucket : buckets) {
     detail::insertion_sort(bucket.begin(), bucket.end(), std::less<VIPair>());
