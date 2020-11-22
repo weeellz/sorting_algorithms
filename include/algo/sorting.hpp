@@ -109,57 +109,32 @@ void radix_argsort_impl(Iter begin, Iter end, ResultIter result, int i) {
 }
 
 template <typename Iter, typename ResultIter>
-Iter partition(Iter begin, Iter end, ResultIter result, int random) {
-  auto size = std::distance(begin, end);
-  auto iter_begin = begin;
-  auto iter_end = begin + size - 1;
-  auto pivot = *(begin + random);
+std::pair<Iter, Iter> partition(Iter begin, Iter end, ResultIter result,
+                                int random) {
 
-  while (true) {
-    while (*iter_begin < pivot) {
-      ++iter_begin;
-    }
-    while (*iter_end > pivot) {
-      --iter_end;
-    }
-    auto i = std::distance(begin, iter_begin);
-    auto j = std::distance(begin, iter_end);
-    if (i >= j) {
-      return iter_end + 1;
-    }
-    std::iter_swap(iter_begin, iter_end);
-    std::iter_swap(result + i, result + j);
-    ++iter_begin;
-    --iter_end;
-  }
-}
-
-template <typename Iter, typename ResultIter>
-Iter lomuto_partition(Iter begin, Iter end, ResultIter result, int random) {
   auto pivot = *(begin + random);
-  std::iter_swap(begin + random, end - 1);
-  auto last_less_num = begin;
-  auto last_great_num = begin;
-  for (auto iter = begin; iter != end - 1; ++iter) {
-    if (*iter > pivot) {
-      ++last_great_num;
-    } else if (*iter == pivot) {
-      if (std::distance(begin, last_less_num) <
-          std::distance(last_less_num, last_great_num)) {
-        std::iter_swap(last_less_num, iter);
-        ++last_less_num;
-      } else {
-        std::iter_swap(last_great_num, iter);
-        ++last_great_num;
-      }
+  auto left = begin;
+  auto right = begin;
+  auto upper_bound = begin + std::distance(begin, end) - 1;
+
+  while (std::distance(begin, right) <= std::distance(begin, upper_bound)) {
+    if (*right < pivot) {
+      std::iter_swap(left, right);
+      std::iter_swap(result + std::distance(begin, left),
+                     result + std::distance(begin, right));
+      ++left;
+      ++right;
+    } else if (*right > pivot) {
+      std::iter_swap(right, upper_bound);
+      std::iter_swap(result + std::distance(begin, right),
+                     result + std::distance(begin, upper_bound));
+      --upper_bound;
     } else {
-      std::iter_swap(last_less_num, iter);
-      ++last_less_num;
-      ++last_great_num;
+      ++right;
     }
   }
-  std::iter_swap(end - 1, last_less_num);
-  return last_less_num;
+
+  return {left, right};
 }
 
 template <typename Iter, typename ResultIter, int Limit = 100>
@@ -169,14 +144,14 @@ void quick_argsort_impl(Iter begin, Iter end, ResultIter result,
        size = std::distance(begin, end)) {
     std::uniform_int_distribution<int> distribution(0, size);
     auto random = distribution(generator);
-    auto p = detail::partition(begin, end, result, random);
-    if (std::distance(begin, p) <= std::distance(p, end)) {
-      quick_argsort_impl(begin, p, result, generator);
-      result += std::distance(begin, p);
-      begin = p;
+    auto [l, r] = detail::partition(begin, end, result, random);
+    if (std::distance(begin, l) <= std::distance(r, end)) {
+      quick_argsort_impl(begin, l, result, generator);
+      result += std::distance(begin, r);
+      begin = r;
     } else {
-      quick_argsort_impl(p, end, result + std::distance(begin, p), generator);
-      end = p;
+      quick_argsort_impl(r, end, result + std::distance(begin, r), generator);
+      end = l;
     }
   }
   detail::insertion_argsort_impl(begin, end, result, std::less());
@@ -255,7 +230,7 @@ void bucket_argsort(
   }
 }
 
-template <typename Iter, typename ResultIter, int Limit>
+template <typename Iter, typename ResultIter, int Limit = 100>
 void quick_argsort(Iter begin, Iter end,
                    ResultIter result) requires std::random_access_iterator<Iter>
     &&detail::partially_ordered<std::iter_value_t<Iter>>
@@ -264,7 +239,7 @@ void quick_argsort(Iter begin, Iter end,
 
   std::vector tmp(begin, end);
   std::iota(result, result + std::distance(begin, end), 0);
-  detail::quick_argsort_impl<Iter, ResultIter, Limit>(tmp.begin(), tmp.end(),
-                                                      result, generator);
+  detail::quick_argsort_impl<decltype(tmp.begin()), decltype(result), Limit>(
+      tmp.begin(), tmp.end(), result, generator);
 }
 } // namespace algo

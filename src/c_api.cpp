@@ -8,5 +8,5 @@ void bucket_argsort_u64(uint64_t *arr, uint64_t *indices, uint64_t size) {
   algo::bucket_argsort(arr, arr + size, indices);
 }
 void quick_argsort_u64(uint64_t *arr, uint64_t *indices, uint64_t size) {
-  algo::bucket_argsort(arr, arr + size, indices);
+  algo::quick_argsort(arr, arr + size, indices);
 }
