@@ -109,6 +109,60 @@ void radix_argsort_impl(Iter begin, Iter end, ResultIter result, int i) {
 }
 
 template <typename Iter, typename ResultIter>
+void radix_counting_argsort_impl(Iter begin, Iter end, ResultIter result) {
+  if (std::distance(begin, end) < 2) {
+    return;
+  }
+
+  auto bits_count = sizeof(std::iter_value_t<Iter>) * 8;
+  auto bits_per_loop = 0;
+
+  switch (bits_count) {
+  case 8:
+  case 16:
+    bits_per_loop = bits_count;
+    break;
+  case 32:
+    bits_per_loop = bits_count / 2;
+    break;
+  case 64:
+    bits_per_loop = bits_count / 4;
+    break;
+  }
+
+  auto loops = bits_count / bits_per_loop;
+  auto mask = (1 << bits_per_loop) - 1;
+  std::vector<size_t> counts(1 << bits_per_loop);
+  std::vector<std::iter_value_t<Iter>> temp(std::distance(begin, end));
+  std::vector<std::iter_value_t<ResultIter>> temp_indices(
+      std::distance(begin, end));
+
+  for (int p = 0; p < loops; ++p) {
+    std::fill(counts.begin(), counts.end(), 0);
+    std::copy(result, result + std::distance(begin, end), temp_indices.begin());
+
+    for (auto iter = begin; iter != end; ++iter) {
+      auto cur_bits = ((*iter) >> (bits_per_loop * p)) & mask;
+      ++counts[cur_bits];
+    }
+
+    for (int i = 1; i < counts.size(); ++i) {
+      counts[i] += counts[i - 1];
+    }
+
+    for (int i = std::distance(begin, end) - 1; i >= 0; --i) {
+      auto num = *(begin + i);
+      auto cur_bits = (num >> (bits_per_loop * p)) & mask;
+      auto pos = counts[cur_bits] - 1;
+      temp[pos] = num;
+      *(result + pos) = temp_indices[i];
+      --counts[cur_bits];
+    }
+    std::copy(temp.begin(), temp.end(), begin);
+  }
+}
+
+template <typename Iter, typename ResultIter>
 std::pair<Iter, Iter> partition(Iter begin, Iter end, ResultIter result,
                                 int random) {
 
@@ -194,7 +248,7 @@ void radix_argsort(Iter begin, Iter end,
         &&detail::index_iter<ResultIter> {
   std::vector tmp(begin, end);
   std::iota(result, result + std::distance(begin, end), 0);
-  detail::radix_argsort_impl(tmp.begin(), tmp.end(), result, 0);
+  detail::radix_counting_argsort_impl(tmp.begin(), tmp.end(), result);
 }
 
 template <typename Iter, typename ResultIter>
