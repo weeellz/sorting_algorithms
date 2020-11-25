@@ -1,3 +1,4 @@
+#include <algo/experimental_sort.hpp>
 #include <algo/sorting.hpp>
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -94,6 +95,18 @@ TYPED_TEST(SortTest, bucket_sort_test) {
     auto expected = this->get_sorted_array(v);
     std::vector<size_t> actual(v.size());
     algo::bucket_argsort(v.begin(), v.end(), actual.begin());
+
+    for (int i = 0; i < v.size(); ++i) {
+      EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
+    }
+  }
+}
+
+TYPED_TEST(SortTest, experimental_radix_sort_test) {
+  for (auto &v : this->data) {
+    auto expected = this->get_sorted_array(v);
+    std::vector<size_t> actual(v.size());
+    algo::experimental::radix_argsort(v.begin(), v.end(), actual.begin());
 
     for (int i = 0; i < v.size(); ++i) {
       EXPECT_EQ(expected[i], v[actual[i]]) << "Different values at " << i;
