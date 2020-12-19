@@ -229,7 +229,7 @@ void bucket_argsort(
   if (size < 2) {
     return;
   }
-  auto num_buckets = (size_t)std::sqrt(std::distance(begin, end));
+  auto num_buckets = std::distance(begin, end);
   auto max = *(std::max_element(begin, end));
   auto bucket_range = (uint64_t)ceil(((double)max) / num_buckets);
   using ValueType = std::iter_value_t<Iter>;
